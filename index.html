@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知管理アプリ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .status.enabled {
+            color: #51cf66;
+            font-weight: bold;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-success {
+            background: #51cf66;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #40c057;
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #fa5252;
+        }
+        
+        .btn-secondary {
+            background: #868e96;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #6c757d;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .notification-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+        
+        .notification-item.repeat {
+            border-left-color: #51cf66;
+        }
+        
+        .notification-item.past {
+            opacity: 0.6;
+            border-left-color: #adb5bd;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .notification-time {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .notification-source {
+            color: #667eea;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .notification-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+            font-size: 1.2em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .repeat-options {
+            display: none;
+        }
+        
+        .repeat-options.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔔 通知管理アプリ</h1>
+            <div class="status" id="notificationStatus">デスクトップ通知: 未許可</div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="activeCount">0</div>
+                <div class="stat-label">有効な通知</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="todayCount">0</div>
+                <div class="stat-label">今日の通知</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="repeatCount">0</div>
+                <div class="stat-label">繰り返し通知</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; border: none; padding: 0;">通知一覧</h2>
+                <button class="btn btn-primary" onclick="showAddModal()">➕ 通知を追加</button>
+            </div>
+            <div id="notificationList"></div>
+        </div>
+    </div>
+
+    <!-- 通知追加モーダル -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2>通知を追加</h2>
+            
+            <div class="form-group">
+                <label>タイトル</label>
+                <input type="text" id="notifTitle" placeholder="例: 勉強する時間">
+            </div>
+            
+            <div class="form-group">
+                <label>メッセージ（任意）</label>
+                <textarea id="notifMessage" placeholder="詳細なメッセージ"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>日時</label>
+                <input type="datetime-local" id="notifDateTime">
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="notifRepeat" onchange="toggleRepeatOptions()">
+                    <label for="notifRepeat" style="margin: 0;">繰り返し通知</label>
+                </div>
+            </div>
+            
+            <div class="repeat-options" id="repeatOptions">
+                <div class="form-group">
+                    <label>繰り返し間隔</label>
+                    <select id="notifRepeatType">
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('addModal')">キャンセル</button>
+                <button class="btn btn-success" onclick="addNotification()">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let notifications = [];
+        let checkInterval;
+
+        function loadNotifications() {
+            try {
+                const data = localStorage.getItem('notifications');
+                if (data) {
+                    notifications = JSON.parse(data);
+                }
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+            }
+            renderNotifications();
+            updateStats();
+        }
+
+        function saveNotifications() {
+            try {
+                localStorage.setItem('notifications', JSON.stringify(notifications));
+                renderNotifications();
+                updateStats();
+            } catch (error) {
+                console.error('保存エラー:', error);
+                alert('保存に失敗しました');
+            }
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notificationList');
+            
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="empty-state">通知がありません</div>';
+                return;
+            }
+
+            const now = new Date();
+            const sorted = [...notifications].sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+            list.innerHTML = sorted.map(notif => {
+                const notifDate = new Date(notif.datetime);
+                const isPast = notifDate < now && !notif.repeat;
+                const timeStr = notifDate.toLocaleString('ja-JP');
+
+                return `
+                    <div class="notification-item ${notif.repeat ? 'repeat' : ''} ${isPast ? 'past' : ''}">
+                        <div class="notification-content">
+                            <div class="notification-title">${notif.title}</div>
+                            ${notif.message ? `<div style="color: #666; margin-bottom: 5px;">${notif.message}</div>` : ''}
+                            <div class="notification-time">
+                                🕐 ${timeStr}
+                                ${notif.repeat ? `<span style="color: #51cf66; font-weight: bold;">🔄 ${getRepeatLabel(notif.repeatType)}</span>` : ''}
+                            </div>
+                            <div class="notification-source">
+                                📱 ${notif.source || '手動追加'}
+                            </div>
+                        </div>
+                        <div class="notification-buttons">
+                            <button class="btn btn-danger" onclick="deleteNotification(${notif.id})">削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getRepeatLabel(type) {
+            const labels = {
+                daily: '毎日',
+                weekly: '毎週',
+                monthly: '毎月'
+            };
+            return labels[type] || '';
+        }
+
+        function updateStats() {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+            const active = notifications.filter(n => {
+                const nDate = new Date(n.datetime);
+                return nDate >= now || n.repeat;
+            });
+
+            const todayNotifs = notifications.filter(n => {
+                const nDate = new Date(n.datetime);
+                return nDate >= today && nDate < tomorrow;
+            });
+
+            const repeating = notifications.filter(n => n.repeat);
+
+            document.getElementById('activeCount').textContent = active.length;
+            document.getElementById('todayCount').textContent = todayNotifs.length;
+            document.getElementById('repeatCount').textContent = repeating.length;
+        }
+
+        function showAddModal() {
+            document.getElementById('addModal').classList.add('show');
+            document.getElementById('notifTitle').value = '';
+            document.getElementById('notifMessage').value = '';
+            document.getElementById('notifDateTime').value = '';
+            document.getElementById('notifRepeat').checked = false;
+            document.getElementById('repeatOptions').classList.remove('show');
+            document.getElementById('notifTitle').focus();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function toggleRepeatOptions() {
+            const checkbox = document.getElementById('notifRepeat');
+            const options = document.getElementById('repeatOptions');
+            if (checkbox.checked) {
+                options.classList.add('show');
+            } else {
+                options.classList.remove('show');
+            }
+        }
+
+        function addNotification() {
+            const title = document.getElementById('notifTitle').value.trim();
+            const message = document.getElementById('notifMessage').value.trim();
+            const datetime = document.getElementById('notifDateTime').value;
+            const repeat = document.getElementById('notifRepeat').checked;
+            const repeatType = document.getElementById('notifRepeatType').value;
+
+            if (!title || !datetime) {
+                alert('タイトルと日時を入力してください');
+                return;
+            }
+
+            const notification = {
+                id: Date.now(),
+                title,
+                message,
+                datetime,
+                repeat,
+                repeatType: repeat ? repeatType : null,
+                source: '手動追加',
+                enabled: true
+            };
+
+            notifications.push(notification);
+            saveNotifications();
+            closeModal('addModal');
+        }
+
+        function deleteNotification(id) {
+            if (!confirm('この通知を削除しますか？')) return;
+            notifications = notifications.filter(n => n.id !== id);
+            saveNotifications();
+        }
+
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert('このブラウザは通知をサポートしていません');
+                return;
+            }
+
+            Notification.requestPermission().then(permission => {
+                updatePermissionStatus();
+                
+                if (permission === 'granted') {
+                    new Notification('通知が有効になりました！', {
+                        body: '通知管理アプリが正常に動作しています'
+                    });
+                } else if (permission === 'denied') {
+                    alert('通知がブロックされました。ブラウザの設定から許可してください。');
+                }
+            });
+        }
+
+        function updatePermissionStatus() {
+            const status = document.getElementById('notificationStatus');
+            status.innerHTML = ''; // リセット
+            
+            if (!("Notification" in window)) {
+                status.textContent = 'デスクトップ通知: 未対応';
+                status.classList.remove('enabled');
+            } else if (Notification.permission === 'granted') {
+                status.textContent = 'デスクトップ通知: 有効 ✅';
+                status.classList.add('enabled');
+            } else if (Notification.permission === 'denied') {
+                status.textContent = 'デスクトップ通知: ブロック中 ❌';
+                status.classList.remove('enabled');
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-primary';
+                btn.style.marginLeft = '10px';
+                btn.style.padding = '5px 15px';
+                btn.textContent = '許可する';
+                btn.onclick = requestNotificationPermission;
+                
+                status.textContent = 'デスクトップ通知: 未許可 ';
+                status.classList.remove('enabled');
+                status.appendChild(btn);
+            }
+        }
+
+        function checkNotifications() {
+            const now = new Date();
+
+            notifications.forEach(notif => {
+                if (!notif.enabled) return;
+
+                const notifDate = new Date(notif.datetime);
+                const timeDiff = notifDate - now;
+
+                if (timeDiff > 0 && timeDiff <= 60000) {
+                    if (Notification.permission === 'granted') {
+                        new Notification(notif.title, {
+                            body: notif.message || '通知の時間です',
+                            icon: '🔔',
+                            tag: `notif-${notif.id}`
+                        });
+                    }
+
+                    if (notif.repeat) {
+                        const newDate = new Date(notifDate);
+                        if (notif.repeatType === 'daily') {
+                            newDate.setDate(newDate.getDate() + 1);
+                        } else if (notif.repeatType === 'weekly') {
+                            newDate.setDate(newDate.getDate() + 7);
+                        } else if (notif.repeatType === 'monthly') {
+                            newDate.setMonth(newDate.getMonth() + 1);
+                        }
+                        notif.datetime = newDate.toISOString().slice(0, 16);
+                    } else {
+                        notif.enabled = false;
+                    }
+                }
+            });
+
+            saveNotifications();
+        }
+
+        function listenToExternalNotifications() {
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'notification-request') {
+                    const request = JSON.parse(e.newValue);
+                    if (request) {
+                        notifications.push({
+                            id: Date.now(),
+                            title: request.title,
+                            message: request.message,
+                            datetime: request.datetime,
+                            repeat: request.repeat || false,
+                            repeatType: request.repeatType || null,
+                            source: request.source || '外部アプリ',
+                            enabled: true
+                        });
+                        saveNotifications();
+                        localStorage.removeItem('notification-request');
+                    }
+                }
+            });
+        }
+
+        loadNotifications();
+        updatePermissionStatus();
+        listenToExternalNotifications();
+
+        checkInterval = setInterval(checkNotifications, 30000);
+        checkNotifications();
+    </script>
+</body>
+</html>
